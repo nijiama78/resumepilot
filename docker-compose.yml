@@ -1,0 +1,31 @@
+# ResumePilot 一键编排：前端(nginx) + 后端(FastAPI) + 数据卷
+# 使用：docker compose up --build   然后访问 http://localhost:8080
+services:
+  backend:
+    build: ./backend
+    container_name: resumepilot-backend
+    environment:
+      # 生产环境务必改成随机长字符串
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-me}
+      # 通过 8080 端口访问时，前端源就是 http://localhost:8080
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8080}
+      DATABASE_URL: sqlite:////data/resumepilot.db
+      # 可选：填了就走真实大模型
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.openai.com/v1}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
+    volumes:
+      - resumepilot-data:/data
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: resumepilot-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  resumepilot-data:
